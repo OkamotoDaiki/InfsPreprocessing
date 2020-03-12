@@ -5,7 +5,7 @@ Preprocess infrasound generateed from volcanic eruption data with python and she
 Description
 ====
 Preprocess inf01 data csv file you insert infrasound data to ./Infs/(eruption folder).
-Threorder of processing is as follows.
+The order of processing is as follows.
 1. cut_supervise_data_multi.py : 
 cut raw data from eruption volcano 30min data, label 1 and label 0.
 
