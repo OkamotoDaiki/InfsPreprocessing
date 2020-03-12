@@ -1,8 +1,5 @@
 Preprocessing infrasound data of volcanic eruption
 ====
-
-Overview
-====
 Preprocess infrasound generateed from volcanic eruption data with python and shell-script.
 
 Description
