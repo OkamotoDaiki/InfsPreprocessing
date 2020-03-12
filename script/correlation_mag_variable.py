@@ -18,8 +18,7 @@ def GetEruptionDataFolders():
 def main():
     #folders
     eruption_data_folders = GetEruptionDataFolders()
-    #mag_variable_list = np.arange(0, 15.5, 0.5)
-    mag_variable_list = [8.0]
+    mag_variable_list = np.arange(0, 15.5, 0.5)
 
     generate_fpath = "../"
     supervise_data_file = "supervise_data"
