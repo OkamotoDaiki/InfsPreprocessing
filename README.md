@@ -2,10 +2,11 @@ Preprocessing infrasound data of volcanic eruption
 ====
 
 Overview
-
+====
 Preprocess infrasound generateed from volcanic eruption data with python and shell-script.
 
-##Description
+Description
+====
 Preprocess inf01 data csv file you insert infrasound data to./Infs/(eruption folder).
 Threorder of processing is as follows.
 1. cut_supervise_data_multi.py
@@ -18,20 +19,23 @@ dynamic highpass-filter to cutting raw data.
 correlation each sensor processing preprocessing wave data
 supervise dataset is moved "move_supervise_data" folder, "supervise_data" folder is temp.
 
-3.5. (option) bash count_supervise_csv_mag_variable.sh
+4. (option) bash count_supervise_csv_mag_variable.sh
 count number of supervise data file.
 
 After run all script, move prerpcessing infrasound data in "move_supervise_data" to directory extracting feature script.
 
-##Requirement
+Requirement
+====
 numpy, matplotlib, pandas
 
-##Usage
+Usage
+====
 Run infs_preprocessing.sh only with bash command
 
 >>>bash infs_preprocessing.sh
 
 So, user need to be able to use shell script.
 
-##LICENSE
+LICENSE
+====
 MIT
