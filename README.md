@@ -31,7 +31,7 @@ Run infs_preprocessing.sh only with bash command
 
 `$bash infs_preprocessing.sh`
 
-So, user need to be able to use shell script.
+So, user need to be able to use UNIX command.
 
 LICENSE
 ====
