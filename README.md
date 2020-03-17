@@ -23,7 +23,8 @@ After run all script, move prerpcessing infrasound data in "move_supervise_data"
 
 Requirement
 ====
-numpy, matplotlib, pandas
+Python 3.6.5  
+numpy 1.14.3, matplotlib 2.2.2, pandas 0.23.0
 
 Usage
 ====
