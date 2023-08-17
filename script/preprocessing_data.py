@@ -113,7 +113,7 @@ def main():
         config = json.load(f)
 
     fpath = config["input_fpath"]
-    vol_place = config["vol_obs_place"]
+    vol_place = config["vol_place"]
     JMA_obs_place = config["JMA_obs_place"]
     folder_names = OperateFpath.get_multi_folder(fpath, vol_place, JMA_obs_place)
 
