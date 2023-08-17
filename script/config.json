@@ -1,10 +1,13 @@
 {
     "input_fpath": "../Infs",
-    "vol_obs_place": "Sakurazima_Ontake",
+    "vol_place": "Sakurazima_Ontake",
     "JMA_obs_place": "Higashikorimoto",
     "data_length": 1024,
     "infs_number": 6,
     "lack_rate_number": -1,
     "fs": 2,
-    "cutpoint": 4
+    "cutpoint": 4,
+    "min_mag": 0,
+    "max_mag": 15.5,
+    "mag_interval": 0.5
 }

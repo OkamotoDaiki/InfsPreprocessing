@@ -3,22 +3,30 @@ import shutil
 import os
 import sys
 import subprocess
-from subscript import test_threshold_magnitude_correlation as threshold_correlation
+import json
+from subscript import threshold_magnitude_correlation as threshold_correlation
 from subscript import OperateFpath
 
-def GetEruptionDataFolders():
-    fpath = "../Infs"
-    vol_place = "Sakurazima_Ontake"
-    JMA_obs_place = "Higashikorimoto"
+def get_eruption_data_folders(config):
+    fpath = config["input_fpath"]
+    vol_place = config["vol_place"]
+    JMA_obs_place = config["JMA_obs_place"]
 
     eruption_data_folders = OperateFpath.GetMultiFolder(fpath, vol_place, JMA_obs_place)
     return eruption_data_folders
 
 
 def main():
+    # JSONファイルを読み込む
+    with open('./script/config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+
     #folders
-    eruption_data_folders = GetEruptionDataFolders()
-    mag_variable_list = np.arange(0, 15.5, 0.5)
+    min_mag = config["min_mag"]
+    max_mag = config["max_mag"]
+    mag_interval = config["mag_interval"]
+    eruption_data_folders = get_eruption_data_folders(config)
+    mag_variable_list = np.arange(min_mag, max_mag, mag_interval)
 
     generate_fpath = "../"
     supervise_data_file = "supervise_data"

@@ -6,7 +6,7 @@ Description
 ====
 Preprocess inf01 data csv file you insert infrasound data to ./Infs/(eruption folder).
 The order of processing is as follows.
-1. cut raw data from eruption volcano 30min data, label 1 and label 0.  
+1. cut raw data from eruption volcano about 30min data, label 1 and label 0.  
 `$ cut_supervise_data_multi.py`  
 
 2. dynamic highpass-filter to cutting raw data.  
