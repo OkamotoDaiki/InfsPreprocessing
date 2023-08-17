@@ -6,11 +6,12 @@ import sys
 import os
 import glob
 import shutil
+import json
 from subscript import FindArrivalTime
 from subscript import ConvertUnixTime
 from subscript import OperateFpath
 
-def ArrivalTimes(timestamp, obs_place, vol_place):
+def arrival_times(timestamp, obs_place, vol_place):
     tropo_arrival_time, strato_arrival_time, themo_arrival_time = FindArrivalTime.ArrivalTimeValues(obs_place, vol_place)
     obs_time_Unix = int(ConvertUnixTime.GetUnixTime(timestamp))
     tropo_arrival_time = tropo_arrival_time + obs_time_Unix
@@ -19,7 +20,7 @@ def ArrivalTimes(timestamp, obs_place, vol_place):
     return [tropo_arrival_time, strato_arrival_time, themo_arrival_time]
 
 
-def GenerateTimeSeriesGraph_vline(fname, x, y, timestamp, obs_place, vol_place):
+def generate_time_series_graph_vline(fname, x, y, timestamp, obs_place, vol_place):
     """
     Generate time series graph adding arrival time vertical line.
     """
@@ -33,7 +34,7 @@ def GenerateTimeSeriesGraph_vline(fname, x, y, timestamp, obs_place, vol_place):
     plt.ylim(min(y), max(y))
     
     #vline
-    vline_list = ArrivalTimes(timestamp, obs_place, vol_place)
+    vline_list = arrival_times(timestamp, obs_place, vol_place)
     count = 0
 
     #error dash line
@@ -65,14 +66,14 @@ def GenerateTimeSeriesGraph_vline(fname, x, y, timestamp, obs_place, vol_place):
     return 0
 
 
-def GetCsvData(fpath):
+def get_csv_data(fpath):
     df = pd.read_csv(fpath)
     times = df['SensorTimeStamp'].tolist()
     data = df['InfAC'].tolist()
     return times, data
 
 
-def WriteCSV(fpath, times, data):
+def write_csv(fpath, times, data):
     fpath_csv = fpath + ".csv"
     in_dataframe = [[times[number], data[number]] for number in range(len(data))]
     header = ['SensorTimeStamp', 'InfAC']
@@ -82,16 +83,17 @@ def WriteCSV(fpath, times, data):
     return 0
 
 
-def SampleNumber_SuperviseData(tropo_time, themo_time, times):
+def sample_number_supervise_data(tropo_time, themo_time, times, data_length):
     """
     Definition number of supervise sample data. 
     Output start array number, end array number.
 
     Rule: 1024 = 2*(other + 30) + (themo_time - tropo_time)
+    この式は論文を参照.
     """
-    error_time = 30
+    error_time = 30 #分精度の誤差を反映. 単位は[s]
     tropo_error = tropo_time - error_time
-    max_period_InThemo = 25
+    max_period_InThemo = 25 #熱圏での火山噴火波形の継続時間. 単位は[s]
     themo_error = themo_time + max_period_InThemo + error_time
 
     number1 = 0
@@ -111,7 +113,7 @@ def SampleNumber_SuperviseData(tropo_time, themo_time, times):
     #edit
     try:
         center_number = int((end_cut_number - start_cut_number) / 2) + start_cut_number
-        one_side_length = 512
+        one_side_length = int(data_length / 2)
         start_cut_number = center_number - one_side_length
         end_cut_number = center_number + one_side_length
         print("new supervise definition : {}".format(end_cut_number - start_cut_number))
@@ -136,7 +138,8 @@ def SampleNumber_SuperviseData(tropo_time, themo_time, times):
 
     return start_cut_number, end_cut_number
 
-def GenerateTimeSeriesGraph(fpath, times, data):
+
+def generate_time_series_graph(fpath, times, data):
     fpath_png = fpath + ".png"
     plt.clf()
     plt.xlabel("times")
@@ -147,18 +150,18 @@ def GenerateTimeSeriesGraph(fpath, times, data):
     return 0
 
 
-def CutlabelZero(times, data, start_cut_number, end_cut_number, save_fpath, file_name, data_length=1024):
+def cut_label_zero(times, data, start_cut_number, end_cut_number, save_fpath, file_name, data_length=1024):
     """
     Cut label 0 and generate csv and png file.
     Overview:
         based on forward eruption time. but unable to generate, back eruption time.
     """
-    def GenerateFiles(fpath_supervise_zero, times, data):
+    def generate_files(fpath_supervise_zero, times, data):
         """
         Generate csv and png file.
         """
-        WriteCSV(fpath_supervise_zero, times, data)
-        GenerateTimeSeriesGraph(fpath_supervise_zero, times, data)
+        write_csv(fpath_supervise_zero, times, data)
+        generate_time_series_graph(fpath_supervise_zero, times, data)
         return 0
 
     
@@ -192,25 +195,25 @@ def CutlabelZero(times, data, start_cut_number, end_cut_number, save_fpath, file
     fpath_supervise_zero = folder_supervise_zero + fname_supervise_zero
     try:
         os.mkdir(folder_supervise_zero)
-        GenerateFiles(fpath_supervise_zero, times[label_zero_start_cut_number:label_zero_end_cut_number], data[label_zero_start_cut_number:label_zero_end_cut_number])
+        generate_files(fpath_supervise_zero, times[label_zero_start_cut_number:label_zero_end_cut_number], data[label_zero_start_cut_number:label_zero_end_cut_number])
     except FileExistsError:
-        GenerateFiles(fpath_supervise_zero, times[label_zero_start_cut_number:label_zero_end_cut_number], data[label_zero_start_cut_number:label_zero_end_cut_number])
+        generate_files(fpath_supervise_zero, times[label_zero_start_cut_number:label_zero_end_cut_number], data[label_zero_start_cut_number:label_zero_end_cut_number])
     return 0
 
 
-def CutlabelOne(times, data, start_cut_number, end_cut_number, save_fpath, file_name, obs_time_JMA, obs_place, vol_place):
+def cut_label_one(times, data, start_cut_number, end_cut_number, save_fpath, file_name, obs_time_JMA, obs_place, vol_place):
     """
     Cut label 1 and generate csv and png file.
     Overview:
         generate supervise label 1 data with eruption arrival time
     """
 
-    def GenerateFiles(save_fname, times, data, obs_time_JMA, obs_place, vol_place):
+    def generate_files(save_fname, times, data, obs_time_JMA, obs_place, vol_place):
         """
         Generate csv and png file.
         """
-        GenerateTimeSeriesGraph_vline(save_fname, times, data, obs_time_JMA, obs_place, vol_place)
-        WriteCSV(save_fname, times, data)
+        generate_time_series_graph_vline(save_fname, times, data, obs_time_JMA, obs_place, vol_place)
+        write_csv(save_fname, times, data)
         return 0
 
     folder_supervise_one = save_fpath + "label_1/"
@@ -223,64 +226,70 @@ def CutlabelOne(times, data, start_cut_number, end_cut_number, save_fpath, file_
     else:
         try:
             os.mkdir(folder_supervise_one)
-            GenerateFiles(save_fname, times[start_cut_number:end_cut_number], data[start_cut_number:end_cut_number], obs_time_JMA, obs_place, vol_place)
+            generate_files(save_fname, times[start_cut_number:end_cut_number], data[start_cut_number:end_cut_number], obs_time_JMA, obs_place, vol_place)
         except FileExistsError:
-            GenerateFiles(save_fname, times[start_cut_number:end_cut_number], data[start_cut_number:end_cut_number], obs_time_JMA, obs_place, vol_place)
+            generate_files(save_fname, times[start_cut_number:end_cut_number], data[start_cut_number:end_cut_number], obs_time_JMA, obs_place, vol_place)
     return 0
 
 
-def CutLabelData(fpath, folder_name, save_fpath, obs_time_JMA, vol_place):
+def cut_label_data(fpath, folder_name, save_fpath, obs_time_JMA, vol_place, config):
     """
     Cut label data.
     Get csv fpath and generate label 0 and 1.
     """
-    infs_number = 6
-    lack_rate_number = -1
+    infs_number = config["infs_number"] #なぞの数字。たぶんインフラサウンドcsvデータ名から取っている。
+    lack_rate_number = config["lack_rate_number"] #なぞの数字。たぶんインフラサウンドcsvデータ名から決まっている。
+    data_length = config["data_length"] #データ長
 
     csv_fpath = fpath + "/" + folder_name + "/interpolation_data/*.csv"
 
     csv_files = glob.glob(csv_fpath)
     for csv_file in csv_files:
         file_name = csv_file.split("/")[-1].split(".")[0] + "." + csv_file.split("/")[-1].split(".")[-2]
-        obs_place = OperateFpath.GetObsPlaceName(csv_file, infs_number, lack_rate_number)
+        obs_place = OperateFpath.get_obs_place_name(csv_file, infs_number, lack_rate_number)
 
         #data
-        times, data = GetCsvData(csv_file)
+        times, data = get_csv_data(csv_file)
 
-        ArrivalTime_list = ArrivalTimes(obs_time_JMA, obs_place, vol_place)
-        start_cut_number, end_cut_number = SampleNumber_SuperviseData(ArrivalTime_list[0], ArrivalTime_list[2], times)
+        #対流圏から熱圏のインフラサウンド到着予測時間の取得
+        ArrivalTime_list = arrival_times(obs_time_JMA, obs_place, vol_place) #tropo, strato, themoの三種類
+        start_cut_number, end_cut_number = sample_number_supervise_data(ArrivalTime_list[0], ArrivalTime_list[2], times, data_length) #カットの最初と最後を取得
 
         #supervise data, label 0
-        CutlabelZero(times, data, start_cut_number, end_cut_number, save_fpath, file_name, data_length=1024)
+        print("label 0")
+        cut_label_zero(times, data, start_cut_number, end_cut_number, save_fpath, file_name, data_length)
 
         #supervise data, label 1
         print("label 1")
-        CutlabelOne(times, data, start_cut_number, end_cut_number, save_fpath, file_name, obs_time_JMA, obs_place, vol_place)
+        cut_label_one(times, data, start_cut_number, end_cut_number, save_fpath, file_name, obs_time_JMA, obs_place, vol_place)
     return 0
 
-def main():
-    fpath = "../Infs"
-    vol_place = "Sakurazima_Ontake"
-    JMA_obs_place = "Higashikorimoto"
-    folder_names = OperateFpath.GetMultiFolder(fpath, vol_place, JMA_obs_place)
 
-    data_length = 1024
+def main():
+    # JSONファイルを読み込む
+    with open('./script/config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+
+    fpath = config["input_fpath"] #インプットフォルダ
+    vol_place = config["vol_place"] #火山名
+    JMA_obs_place = config["JMA_obs_place"] #気象庁の観測場所
+    folder_names = OperateFpath.get_multi_folder(fpath, vol_place, JMA_obs_place)
 
     for folder_name in folder_names:
-        obs_time_JMA, csv_fpath, graph_fpath = OperateFpath.SingleGetSavePathandTime(fpath, folder_name)
+        obs_time_JMA, csv_fpath, graph_fpath = OperateFpath.single_get_save_path_and_time(fpath, folder_name)
         save_fpath = fpath + "/" + folder_name + "/cut_supervise_data/"
         try:
             shutil.rmtree(save_fpath)
             try:
                 os.mkdir(save_fpath)
                 try:
-                    CutLabelData(fpath, folder_name, save_fpath, obs_time_JMA, vol_place)
+                    cut_label_data(fpath, folder_name, save_fpath, obs_time_JMA, vol_place, config)
                 except UnboundLocalError:
                     print("Error! Need to investigate programming.")
 
             except FileExistsError:
                 try:
-                    CutLabelData(fpath, folder_name, save_fpath, obs_time_JMA, vol_place)
+                    cut_label_data(fpath, folder_name, save_fpath, obs_time_JMA, vol_place, config)
                 except UnboundLocalError:
                     print("Error! Need to investigate programming.")
 
@@ -288,16 +297,15 @@ def main():
             try:
                 os.mkdir(save_fpath)
                 try:
-                    CutLabelData(fpath, folder_name, save_fpath, obs_time_JMA, vol_place)
+                    cut_label_data(fpath, folder_name, save_fpath, obs_time_JMA, vol_place, config)
                 except UnboundLocalError:
                     print("Error! Need to investigate programming.")
 
             except FileExistsError:
                 try:
-                    CutLabelData(fpath, folder_name, save_fpath, obs_time_JMA, vol_place)
+                    cut_label_data(fpath, folder_name, save_fpath, obs_time_JMA, vol_place, config)
                 except UnboundLocalError:
                     print("Error! Need to investigate programming.")
-    
     return 0
 
 if __name__=="__main__":

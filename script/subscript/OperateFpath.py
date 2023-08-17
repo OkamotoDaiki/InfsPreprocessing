@@ -32,7 +32,7 @@ def MultiGetSavePathandTime(fpath, vol_place, obs_place):
     return obs_time_JMA, get_fcsv_data_fpath, generate_graph_fpath
 
 
-def GetObsPlaceName(csv_file, infs_number, lack_rate_number):
+def get_obs_place_name(csv_file, infs_number, lack_rate_number):
     """
     Get infs observatory place Name
     """
@@ -49,7 +49,7 @@ def GetObsPlaceName(csv_file, infs_number, lack_rate_number):
     return obs_place
 
 
-def GetMultiFolder(fpath, vol_place, obs_place):
+def get_multi_folder(fpath, vol_place, obs_place):
     """
     Get specified multi folder.
     """
@@ -61,7 +61,7 @@ def GetMultiFolder(fpath, vol_place, obs_place):
     return Investigate_folder
 
 
-def SingleGetSavePathandTime(fpath, folder):
+def single_get_save_path_and_time(fpath, folder):
     """
     Get save path and JMA got observation time only one.
     """
