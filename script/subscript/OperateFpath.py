@@ -150,7 +150,7 @@ def main():
 
     #obs_time_JMA_list, csv_fpath_list, graph_fpath_list = MultiGetSavePathandTime(fpath, vol_place, obs_place)
 
-    obs_time_JMA, csv_fpath, graph_fpath = SingleGetSavePathandTime(fpath, folder_name)
+    obs_time_JMA, csv_fpath, graph_fpath = single_get_save_path_and_time(fpath, folder_name)
     csv_file_list, new_graph_folder_name_list = CSVdataPath_NewGraphFolder(csv_fpath, graph_fpath)
     for folder in new_graph_folder_name_list:
         obs_place = folder.split("_")[-3] + "_" + folder.split("_")[-2]
