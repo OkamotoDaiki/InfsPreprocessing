@@ -4,5 +4,7 @@
     "JMA_obs_place": "Higashikorimoto",
     "data_length": 1024,
     "infs_number": 6,
-    "lack_rate_number": -1
+    "lack_rate_number": -1,
+    "fs": 2,
+    "cutpoint": 4
 }

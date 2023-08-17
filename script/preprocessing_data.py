@@ -8,9 +8,10 @@ import glob
 import os
 import sys
 import shutil
+import json
 from subscript import OperateFpath
 
-def HighpassFilter(freq_seq, fft_data, dF, cutpoint):
+def highpass_filter(freq_seq, fft_data, dF, cutpoint):
     """
     Highpass Filter
     """
@@ -27,12 +28,12 @@ def HighpassFilter(freq_seq, fft_data, dF, cutpoint):
     return fft_highpass
 
 
-def CutOrPadding(data, supervised_data_length=512):
+def cut_or_padding(data, supervised_data_length=512):
     """
     Arange to rule of supervised data.
     If larger than supervied data length, cut. Else if smaller than supervised data length, zero padding.
     """
-    def CutData(delta_supervised, data):
+    def cut_data(delta_supervised, data):
         if delta_supervised % 2 == 0:
             start_delete = int(delta_supervised / 2)
             end_delete = int(delta_supervised / 2)
@@ -44,7 +45,7 @@ def CutOrPadding(data, supervised_data_length=512):
         return data[start_delete: data_length - end_delete]
     
     
-    def ZeroPadding(delta_supervised, data):
+    def zero_padding(delta_supervised, data):
         delta_supervised = abs(delta_supervised)
         if delta_supervised % 2 == 0:
             zeros = np.zeros(int(delta_supervised / 2))
@@ -61,9 +62,9 @@ def CutOrPadding(data, supervised_data_length=512):
     data_length = len(data)
     delta_supervised = data_length - supervised_data_length
     if delta_supervised < 0:
-        data = ZeroPadding(delta_supervised, data)
+        data = zero_padding(delta_supervised, data)
     elif delta_supervised > 0:
-        data = CutData(delta_supervised, data)
+        data = cut_data(delta_supervised, data)
     elif delta_supervised == 0:
         data = data
     else:
@@ -71,7 +72,7 @@ def CutOrPadding(data, supervised_data_length=512):
     return data
 
 
-def FindCutPoint(freq_seq, nq_fft_list):
+def find_cut_point(freq_seq, nq_fft_list):
     """
     Find Cutpoint for highpass-filter.
     """
@@ -95,7 +96,7 @@ def FindCutPoint(freq_seq, nq_fft_list):
     return min_freq, min_array_number, threshold_list
 
 
-def PlotSeriesGraph(fpath, times, data):
+def plot_series_graph(fpath, times, data):
     plt.clf()
     fname = fpath + ".png"
     plt.plot(times, data)
@@ -105,11 +106,16 @@ def PlotSeriesGraph(fpath, times, data):
     print("save : {}".format(fname))
     return 0
 
+
 def main():
-    fpath = "../Infs/"
-    vol_place = "Sakurazima_Ontake"
-    JMA_obs_place = "Higashikorimoto"
-    folder_names = OperateFpath.GetMultiFolder(fpath, vol_place, JMA_obs_place)
+    # JSONファイルを読み込む
+    with open('./script/config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+
+    fpath = config["input_fpath"]
+    vol_place = config["vol_obs_place"]
+    JMA_obs_place = config["JMA_obs_place"]
+    folder_names = OperateFpath.get_multi_folder(fpath, vol_place, JMA_obs_place)
 
     for folder_name in folder_names:
         supervise_fpath = fpath + folder_name + "/cut_supervise_data/label_1/"
@@ -129,16 +135,16 @@ def main():
             s1_times = df["SensorTimeStamp"].tolist()
 
             N = len(s1_times)
-            fs = 2
-            cutpoint = 4
+            fs = config["fs"]
+            cutpoint = config["cutpoint"]
             dF = fs / N
             freq_seq = np.arange(0, fs, dF)
             windowed_data1 = np.hamming(len(s1_InfAC)) * s1_InfAC
             fft1 = np.fft.fft(windowed_data1)
             nq_fft_list = abs(fft1)[:int(N / 2)]
             try:
-                min_freq, min_array_number, threshold_list = FindCutPoint(freq_seq, nq_fft_list)
-                fft1_highpass = HighpassFilter(freq_seq, fft1, dF, min_array_number)
+                min_freq, min_array_number, threshold_list = find_cut_point(freq_seq, nq_fft_list)
+                fft1_highpass = highpass_filter(freq_seq, fft1, dF, min_array_number)
                 iFFT1_highpass = np.fft.ifft(fft1_highpass)
 
                 supervise_data_name = csv_file.split("/")[-1].split(".")[0] + "." + csv_file.split("/")[-1].split(".")[-2]
@@ -150,7 +156,7 @@ def main():
                 df1.to_csv(write_fpath)
                 print("save : {}".format(write_fpath))
                 png_fpath = write_folder_name + "Preprocessing_" + supervise_data_name
-                PlotSeriesGraph(png_fpath, s1_times, iFFT1_highpass)
+                plot_series_graph(png_fpath, s1_times, iFFT1_highpass)
             except UnboundLocalError:
                 print("UnboundLocalError: Modify programming.")
 
